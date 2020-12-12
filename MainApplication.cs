@@ -1,4 +1,6 @@
+using GLib;
 using Gtk;
+using Application = Gtk.Application;
 
 namespace GtkTeste
 {
@@ -6,7 +8,7 @@ namespace GtkTeste
     {
         private ApplicationWindow _mainWindow;
 
-        public MainApplication() : base("org.example.application", GLib.ApplicationFlags.None) { }
+        public MainApplication() : base("org.example.application", ApplicationFlags.None) { }
 
         protected override void OnActivated()
         {
@@ -16,14 +18,14 @@ namespace GtkTeste
 
         private void SetupActions()
         {
-            var quitAction = new GLib.SimpleAction("quit", null);
+            var quitAction = new SimpleAction("quit", null);
             quitAction.Activated += (s, e) => _mainWindow.Close();
             AddAction(quitAction);
         }
 
         private void BuildUi()
         {
-            var menuTemplate = @"
+            const string menuTemplate = @"
       <interface>
         <menu id='app_menu'>
           <submenu>
@@ -40,22 +42,35 @@ namespace GtkTeste
 
             var menuBuilder = new Builder();
             menuBuilder.AddFromString(menuTemplate);
-
-            AppMenu = new GLib.MenuModel(menuBuilder.GetObject("app_menu").Handle);
-
-            var headerBar = new HeaderBar()
+            var menuModel = new MenuModel(menuBuilder.GetObject("app_menu").Handle);
+            
+            const string windowTitle = "Gtk on Windows";
+            var headerBar = new HeaderBar
             {
-                Title = "Gtk on Windows",
+                Title = windowTitle,
                 Subtitle = "With GtkSharp",
                 ShowCloseButton = true
             };
 
             _mainWindow = new MainWindow(this)
             {
+                Title = windowTitle,
                 IconName = "applications-development",
-                Titlebar = headerBar,
+                ShowMenubar = false
             };
 
+
+            if (PrefersAppMenu())
+            {
+                AppMenu = menuModel;
+                _mainWindow.Titlebar = headerBar;
+            }
+            else
+            {
+                Menubar = menuModel;
+                _mainWindow.ShowMenubar = true;
+            }
+            
             _mainWindow.ShowAll();
         }
     }
